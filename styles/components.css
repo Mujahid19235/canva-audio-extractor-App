@@ -106,18 +106,19 @@
 .progressTrack {
   position: relative;
   width: 100%;
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(17, 23, 29, 0.1);
+  height: 14px;
+  border-radius: 0;
+  background: rgba(17, 23, 29, 0.12);
   overflow: hidden;
 }
 
 .progressFillDone {
   width: 100%;
   height: 100%;
-  border-radius: 999px;
-  background: #138a36;
-  transition: width 0.25s ease;
+  border-radius: 0;
+  background: linear-gradient(90deg, #138a36 0%, #1ca648 50%, #138a36 100%);
+  background-size: 200% 100%;
+  animation: aeProgressWrapUp 0.45s ease-out forwards;
 }
 
 .progressFillActive {
@@ -125,10 +126,16 @@
   top: 0;
   left: 0;
   height: 100%;
-  width: 42%;
-  border-radius: 999px;
-  background: #7d2ae8;
-  animation: aeProgressSlide 1.2s ease-in-out infinite;
+  width: 45%;
+  border-radius: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    #7d2ae8,
+    #7d2ae8 10px,
+    #9747ff 10px,
+    #9747ff 20px
+  );
+  animation: aeProgressSlide 1.1s linear infinite;
 }
 
 .progressCheck {
@@ -139,9 +146,20 @@
 
 @keyframes aeProgressSlide {
   0% {
-    left: -42%;
+    left: -45%;
   }
   100% {
     left: 100%;
+  }
+}
+
+@keyframes aeProgressWrapUp {
+  0% {
+    width: 35%;
+    background-position: 100% 0;
+  }
+  100% {
+    width: 100%;
+    background-position: 0 0;
   }
 }
