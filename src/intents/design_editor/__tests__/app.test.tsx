@@ -259,7 +259,7 @@ describe("Audio Extractor App", () => {
       getByRole("button", { name: "Select a video in editor or Uploads" }),
     );
     expect(
-      getByRole("button", { name: "OR Choose From Device" }),
+      getByRole("button", { name: "Choose From Device" }),
     ).toBeTruthy();
 
     const fileInput = container.querySelector(

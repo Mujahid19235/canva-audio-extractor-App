@@ -315,6 +315,17 @@ export const App = () => {
                         })}
                       </Text>
                     </Rows>
+                    <div className={styles.orDivider}>
+                      <span className={styles.orDividerLine} aria-hidden="true" />
+                      <Text size="small" tone="secondary">
+                        {intl.formatMessage({
+                          defaultMessage: "OR",
+                          description:
+                            "Divider text between canvas instructions and device fallback button.",
+                        })}
+                      </Text>
+                      <span className={styles.orDividerLine} aria-hidden="true" />
+                    </div>
                     <div className={styles.fallbackDeviceButtonWrap}>
                       <Button
                         variant="tertiary"
@@ -322,7 +333,7 @@ export const App = () => {
                         onClick={handleOpenDeviceFilePicker}
                       >
                         {intl.formatMessage({
-                          defaultMessage: "OR Choose From Device",
+                          defaultMessage: "Choose From Device",
                           description:
                             "Shortcut button to open the device file picker directly.",
                         })}
