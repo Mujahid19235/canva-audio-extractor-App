@@ -259,7 +259,20 @@ export const App = () => {
             <FileInput
               stretchButton
               multiple={false}
-              accept={["video/*", ".mp4", ".mov", ".m4v", ".webm", ".avi", ".mkv"]}
+              accept={[
+                "video/*",
+                ".mp4",
+                ".mov",
+                ".m4v",
+                ".webm",
+                ".avi",
+                ".mkv",
+                ".flv",
+                ".wmv",
+                ".3gp",
+                ".ogv",
+                ".ts",
+              ]}
               disabled={isProcessing}
               onDropAcceptedFiles={handleAcceptedFiles}
               onDropRejectedFiles={handleRejectedFiles}

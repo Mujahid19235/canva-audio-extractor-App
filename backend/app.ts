@@ -11,6 +11,7 @@ import {
   MediaProcessingError,
   downloadRemoteVideo,
   extractAudioToMp3,
+  getMediaBinaryStatus,
   validateVideoHasAudio,
 } from "./media";
 import { ValidationError, sanitizeAudioTitle } from "./security";
@@ -68,6 +69,10 @@ export function createAudioExtractorRouter(
       optionsSuccessStatus: 200,
     }),
   );
+
+  router.get("/api/health", (_req, res) => {
+    res.status(200).json({ ok: true, ...getMediaBinaryStatus() });
+  });
 
   // Publicly accessible endpoint for Canva's backend to download the temporary MP3.
   // Protected by a cryptographically random UUID token and short TTL.

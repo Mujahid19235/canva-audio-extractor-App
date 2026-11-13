@@ -35,18 +35,41 @@ interface FfprobeResult {
   format?: FfprobeFormat;
 }
 
-function getFfmpegBinary(): string {
-  if (!ffmpegPath) {
-    throw new Error("ffmpeg-static binary path is unavailable.");
+function ensureExecutable(binaryPath: string): string {
+  try {
+    fs.accessSync(binaryPath, fs.constants.X_OK);
+  } catch {
+    try {
+      fs.chmodSync(binaryPath, 0o755);
+    } catch {
+      // Ignore chmod errors; execFile will report if still non-executable
+    }
   }
-  return ffmpegPath;
+  return binaryPath;
+}
+
+function getFfmpegBinary(): string {
+  if (ffmpegPath && fs.existsSync(ffmpegPath)) {
+    return ensureExecutable(ffmpegPath);
+  }
+  return "ffmpeg";
 }
 
 function getFfprobeBinary(): string {
-  if (!ffprobeStatic?.path) {
-    throw new Error("ffprobe-static binary path is unavailable.");
+  if (ffprobeStatic?.path && fs.existsSync(ffprobeStatic.path)) {
+    return ensureExecutable(ffprobeStatic.path);
   }
-  return ffprobeStatic.path;
+  return "ffprobe";
+}
+
+export function getMediaBinaryStatus(): {
+  ffmpegAvailable: boolean;
+  ffprobeAvailable: boolean;
+} {
+  return {
+    ffmpegAvailable: Boolean(ffmpegPath && fs.existsSync(ffmpegPath)),
+    ffprobeAvailable: Boolean(ffprobeStatic?.path && fs.existsSync(ffprobeStatic.path)),
+  };
 }
 
 export async function probeMedia(
@@ -80,6 +103,15 @@ export async function probeMedia(
       throw new MediaProcessingError(
         "Timed out while inspecting the video file.",
         504,
+      );
+    }
+    const errno = (err as NodeJS.ErrnoException)?.code;
+    if (errno === "ENOENT" || errno === "EACCES") {
+      // eslint-disable-next-line no-console
+      console.error("ffprobe binary spawn error:", err);
+      throw new MediaProcessingError(
+        "Server media inspector is unavailable.",
+        500,
       );
     }
     throw new MediaProcessingError(

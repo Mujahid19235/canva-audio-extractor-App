@@ -14,6 +14,17 @@ const SUPPORTED_VIDEO_EXTENSIONS = new Set([
   ".mkv",
   ".mpeg",
   ".mpg",
+  ".flv",
+  ".wmv",
+  ".3gp",
+  ".3g2",
+  ".ogv",
+  ".ts",
+  ".mts",
+  ".m2ts",
+  ".f4v",
+  ".vob",
+  ".asf",
 ]);
 
 export interface ExtractAudioResponse {
