@@ -5,7 +5,6 @@ import {
   Button,
   FileInput,
   FormField,
-  LoadingIndicator,
   Rows,
   SegmentedControl,
   Text,
@@ -25,7 +24,9 @@ import {
 
 type VideoSource = "canvas" | "device";
 
-type ProcessingStage = "idle" | "extracting" | "uploading";
+type ProcessingStage = "idle" | "extracting" | "uploading" | "completed";
+
+type StepState = "pending" | "active" | "completed";
 
 const ACCEPTED_VIDEO_FORMATS = [
   "video/*",
@@ -60,19 +61,35 @@ export const App = () => {
   const [showCanvasGuide, setShowCanvasGuide] = useState(false);
   const hiddenFileInputContainerRef = useRef<HTMLDivElement | null>(null);
 
-  const isProcessing = stage !== "idle";
+  const isProcessing = stage === "extracting" || stage === "uploading";
+  const showProgress = stage !== "idle";
+  const effectiveSource: VideoSource =
+    source === "device"
+      ? "device"
+      : videoSelection.count > 0
+        ? "canvas"
+        : localFile
+          ? "device"
+          : "canvas";
   const hasValidSource =
-    source === "canvas" ? videoSelection.count > 0 : localFile !== undefined;
+    effectiveSource === "canvas"
+      ? videoSelection.count > 0
+      : localFile !== undefined;
 
   const handleSourceChange = (nextSource: VideoSource) => {
     setSource(nextSource);
     setStatus(undefined);
+    setStage("idle");
     setShowCanvasGuide(false);
+    if (nextSource === "canvas") {
+      setLocalFile(undefined);
+    }
   };
 
   const handleAcceptedFiles = (files: File[]) => {
     const file = files[0];
     setStatus(undefined);
+    setStage("idle");
 
     if (!file) {
       setLocalFile(undefined);
@@ -121,15 +138,6 @@ export const App = () => {
     setLocalFile(file);
   };
 
-  const handleAcceptedFilesFromGuide = (files: File[]) => {
-    handleAcceptedFiles(files);
-    const file = files[0];
-    if (file && validateLocalVideoFile(file) === undefined) {
-      setSource("device");
-      setShowCanvasGuide(false);
-    }
-  };
-
   const handleOpenDeviceFilePicker = () => {
     const fileInput = hiddenFileInputContainerRef.current?.querySelector<HTMLInputElement>(
       'input[type="file"]',
@@ -139,6 +147,7 @@ export const App = () => {
 
   const handleRejectedFiles = () => {
     setLocalFile(undefined);
+    setStage("idle");
     setStatus({
       tone: "critical",
       text: intl.formatMessage({
@@ -160,7 +169,7 @@ export const App = () => {
 
     try {
       const extracted =
-        source === "canvas"
+        effectiveSource === "canvas"
           ? await extractAudioFromCanvasSelection(videoSelection)
           : await extractAudioFromLocalFile(localFile as File);
 
@@ -174,6 +183,7 @@ export const App = () => {
         canAddAudioTrack,
       });
 
+      setStage("completed");
       setStatus({
         tone: "positive",
         text: addedToTimeline
@@ -191,6 +201,7 @@ export const App = () => {
             }),
       });
     } catch (error) {
+      setStage("idle");
       const message =
         error instanceof Error && error.message
           ? error.message
@@ -207,15 +218,27 @@ export const App = () => {
       if (extractedToken) {
         await cleanupExtractedAudio(extractedToken);
       }
-      setStage("idle");
     }
   };
+
+  const step1State: StepState =
+    stage === "extracting"
+      ? "active"
+      : stage === "uploading" || stage === "completed"
+        ? "completed"
+        : "pending";
+  const step2State: StepState =
+    stage === "uploading"
+      ? "active"
+      : stage === "completed"
+        ? "completed"
+        : "pending";
 
   const sourceOptions = [
     {
       value: "device" as const,
       label: intl.formatMessage({
-        defaultMessage: "From device",
+        defaultMessage: "From Device",
         description: "Option to extract audio from a local video file on the user's device.",
       }),
     },
@@ -245,13 +268,22 @@ export const App = () => {
           })}
           value={source}
           control={(props) => (
-            <SegmentedControl
-              {...props}
-              options={sourceOptions}
-              value={source}
-              onChange={handleSourceChange}
-              disabled={isProcessing}
-            />
+            <div className={styles.sourceSwitchWrap}>
+              <SegmentedControl
+                {...props}
+                options={sourceOptions}
+                value={source}
+                onChange={handleSourceChange}
+                disabled={isProcessing}
+              />
+              <span className={styles.sourceSwitchSeparator} aria-hidden="true">
+                {intl.formatMessage({
+                  defaultMessage: "|",
+                  description:
+                    "Subtle vertical pipe separator between video source options.",
+                })}
+              </span>
+            </div>
           )}
         />
 
@@ -290,19 +322,14 @@ export const App = () => {
                         })}
                       </Text>
                     </Rows>
-                    <div
-                      style={{
-                        backgroundColor: "rgba(17, 23, 29, 0.05)",
-                        borderRadius: "8px",
-                      }}
-                    >
+                    <div className={styles.fallbackDeviceButtonWrap}>
                       <Button
                         variant="tertiary"
                         stretch
                         onClick={handleOpenDeviceFilePicker}
                       >
                         {intl.formatMessage({
-                          defaultMessage: "Or choose video from device",
+                          defaultMessage: "OR Choose From Device",
                           description:
                             "Shortcut button to open the device file picker directly.",
                         })}
@@ -310,16 +337,21 @@ export const App = () => {
                     </div>
                   </Rows>
                 )}
+                {localFile && (
+                  <Text size="small" tone="secondary">
+                    {localFile.name}
+                  </Text>
+                )}
                 <div
                   ref={hiddenFileInputContainerRef}
-                  style={{ display: "none" }}
+                  className={styles.srOnlyFileInput}
                   aria-hidden="true"
                 >
                   <FileInput
                     multiple={false}
                     accept={ACCEPTED_VIDEO_FORMATS}
                     disabled={isProcessing}
-                    onDropAcceptedFiles={handleAcceptedFilesFromGuide}
+                    onDropAcceptedFiles={handleAcceptedFiles}
                     onDropRejectedFiles={handleRejectedFiles}
                   />
                 </div>
@@ -368,7 +400,6 @@ export const App = () => {
           variant="primary"
           onClick={handleExtract}
           disabled={!hasValidSource || isProcessing}
-          loading={isProcessing}
           stretch
         >
           {intl.formatMessage({
@@ -377,25 +408,114 @@ export const App = () => {
           })}
         </Button>
 
-        {isProcessing && (
-          <Box display="flex" alignItems="center">
-            <LoadingIndicator size="small" />
-            <Box paddingStart="1u">
-              <Text size="small" tone="secondary">
-                {stage === "extracting"
-                  ? intl.formatMessage({
-                      defaultMessage: "Extracting MP3 audio...",
-                      description:
-                        "Loading indicator text while extracting audio from the video.",
-                    })
-                  : intl.formatMessage({
-                      defaultMessage: "Uploading audio to Canva...",
-                      description:
-                        "Loading indicator text while uploading extracted audio to Canva.",
+        {showProgress && (
+          <div className={styles.progressCard} aria-live="polite">
+            <div className={styles.progressStep}>
+              <div className={styles.progressHeader}>
+                <Text size="small">
+                  {intl.formatMessage({
+                    defaultMessage: "Step 1 — Extracting Audio",
+                    description: "Heading for the first stage of audio extraction.",
+                  })}
+                </Text>
+                {step1State === "completed" && (
+                  <span
+                    className={styles.progressCheck}
+                    aria-label={intl.formatMessage({
+                      defaultMessage: "Completed",
+                      description: "Accessible label for a completed step.",
                     })}
+                  >
+                    {intl.formatMessage({
+                      defaultMessage: "✓",
+                      description: "Checkmark symbol for a completed step.",
+                    })}
+                  </span>
+                )}
+              </div>
+              <div
+                className={styles.progressTrack}
+                role="progressbar"
+                aria-label={intl.formatMessage({
+                  defaultMessage: "Extracting Audio",
+                  description: "Accessible label for the audio extraction progress bar.",
+                })}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={step1State === "completed" ? 100 : undefined}
+              >
+                {step1State === "active" && (
+                  <div className={styles.progressFillActive} />
+                )}
+                {step1State === "completed" && (
+                  <div className={styles.progressFillDone} />
+                )}
+              </div>
+              <Text size="small" tone="secondary">
+                {intl.formatMessage({
+                  defaultMessage: "Extracting MP3 audio...",
+                  description:
+                    "Status text shown for the audio extraction stage.",
+                })}
               </Text>
-            </Box>
-          </Box>
+            </div>
+
+            <div className={styles.progressStep}>
+              <div className={styles.progressHeader}>
+                <Text size="small">
+                  {intl.formatMessage({
+                    defaultMessage: "Step 2 — Uploading to Canva",
+                    description: "Heading for the second stage of uploading audio to Canva.",
+                  })}
+                </Text>
+                {step2State === "completed" && (
+                  <span
+                    className={styles.progressCheck}
+                    aria-label={intl.formatMessage({
+                      defaultMessage: "Completed",
+                      description: "Accessible label for a completed step.",
+                    })}
+                  >
+                    {intl.formatMessage({
+                      defaultMessage: "✓",
+                      description: "Checkmark symbol for a completed step.",
+                    })}
+                  </span>
+                )}
+              </div>
+              <div
+                className={styles.progressTrack}
+                role="progressbar"
+                aria-label={intl.formatMessage({
+                  defaultMessage: "Uploading to Canva",
+                  description: "Accessible label for the Canva upload progress bar.",
+                })}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={
+                  step2State === "completed"
+                    ? 100
+                    : step2State === "pending"
+                      ? 0
+                      : undefined
+                }
+              >
+                {step2State === "active" && (
+                  <div className={styles.progressFillActive} />
+                )}
+                {step2State === "completed" && (
+                  <div className={styles.progressFillDone} />
+                )}
+              </div>
+              <Text size="small" tone="secondary">
+                {intl.formatMessage({
+                  defaultMessage: "Uploading audio to Canva...",
+                  description:
+                    "Status text shown for the Canva upload stage.",
+                })}
+              </Text>
+            </div>
+          </div>
         )}
 
         {status && <Alert tone={status.tone}>{status.text}</Alert>}

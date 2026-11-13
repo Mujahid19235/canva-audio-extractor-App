@@ -216,4 +216,79 @@ describe("Audio Extractor App", () => {
       );
     });
   });
+
+  it("supports OR Choose From Device fallback inside Selected in Canva without switching tabs and shows two-step progress", async () => {
+    mockUseSelection.mockReturnValue({
+      scope: "video",
+      count: 0,
+      read: jest.fn().mockResolvedValue({
+        contents: [],
+        save: jest.fn(),
+      }),
+    } as never);
+
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          token: "token-5",
+          audioUrl: "https://api.example.com/api/audio/token-5",
+          mimeType: "audio/mpeg",
+          durationMs: 3600,
+          title: "fallback",
+        }),
+      } as Response)
+      .mockResolvedValueOnce({ ok: true } as Response);
+
+    const { container, getByRole, getByText, findByText, getAllByLabelText } =
+      renderInTestProvider(<App />);
+
+    expect(getByText("|")).toBeTruthy();
+
+    const selectedInCanvaTab = getByRole("radio", {
+      name: "Selected in Canva",
+    });
+    fireEvent.click(selectedInCanvaTab);
+
+    const extractBtn = getByRole("button", {
+      name: "Extract",
+    }) as HTMLButtonElement;
+    expect(extractBtn.getAttribute("aria-disabled")).toBe("true");
+
+    fireEvent.click(
+      getByRole("button", { name: "Select a video in editor or Uploads" }),
+    );
+    expect(
+      getByRole("button", { name: "OR Choose From Device" }),
+    ).toBeTruthy();
+
+    const fileInput = container.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
+    expect(fileInput).toBeTruthy();
+    const videoFile = new File(["video-bytes"], "fallback.mp4", {
+      type: "video/mp4",
+    });
+    fireEvent.change(fileInput, { target: { files: [videoFile] } });
+
+    await findByText("fallback.mp4");
+    expect(selectedInCanvaTab.getAttribute("aria-checked")).toBe("true");
+    expect(extractBtn.getAttribute("aria-disabled")).not.toBe("true");
+
+    fireEvent.click(extractBtn);
+
+    await findByText(/Step 1 — Extracting Audio/);
+    await findByText(/Step 2 — Uploading to Canva/);
+    await findByText(
+      /Audio extracted, uploaded to Canva, and added to your design/i,
+    );
+
+    expect(getAllByLabelText("Completed")).toHaveLength(2);
+    expect(mockUpload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "fallback",
+        durationMs: 3600,
+      }),
+    );
+  });
 });
