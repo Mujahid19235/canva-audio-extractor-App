@@ -52,6 +52,15 @@
   color: #ffffff !important;
 }
 
+.sourceSwitchWrap [role="radiogroup"] button[aria-checked="false"] {
+  background-color: rgba(17, 23, 29, 0.06) !important;
+  transition: background-color 0.15s ease;
+}
+
+.sourceSwitchWrap [role="radiogroup"] button[aria-checked="false"]:hover {
+  background-color: rgba(17, 23, 29, 0.12) !important;
+}
+
 /* Horizontal OR divider above Choose From Device */
 .orDivider {
   display: flex;
