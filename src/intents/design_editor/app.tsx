@@ -400,17 +400,19 @@ export const App = () => {
           </Rows>
         )}
 
-        <Button
-          variant="primary"
-          onClick={handleExtract}
-          disabled={!hasValidSource || isProcessing}
-          stretch
-        >
-          {intl.formatMessage({
-            defaultMessage: "Extract",
-            description: "Primary action button to extract audio from the selected video.",
-          })}
-        </Button>
+        <div className={styles.extractButtonWrap}>
+          <Button
+            variant="primary"
+            onClick={handleExtract}
+            disabled={!hasValidSource || isProcessing}
+            stretch
+          >
+            {intl.formatMessage({
+              defaultMessage: "Extract",
+              description: "Primary action button to extract audio from the selected video.",
+            })}
+          </Button>
+        </div>
 
         {showProgress && (
           <div className={styles.progressCard} aria-live="polite">

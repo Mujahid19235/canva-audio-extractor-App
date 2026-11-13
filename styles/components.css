@@ -67,6 +67,11 @@
   background-color: rgba(17, 23, 29, 0.25);
 }
 
+/* Square corners for Extract button */
+.extractButtonWrap button {
+  border-radius: 0 !important;
+}
+
 /* Visually hidden file input container (keeps native click & change working) */
 .srOnlyFileInput {
   position: absolute;
