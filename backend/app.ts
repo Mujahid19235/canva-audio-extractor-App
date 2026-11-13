@@ -70,8 +70,9 @@ export function createAudioExtractorRouter(
     }),
   );
 
-  router.get("/api/health", (_req, res) => {
-    res.status(200).json({ ok: true, ...getMediaBinaryStatus() });
+  router.get("/api/health", async (_req, res) => {
+    const status = await getMediaBinaryStatus();
+    res.status(200).json({ ok: true, ...status });
   });
 
   // Publicly accessible endpoint for Canva's backend to download the temporary MP3.

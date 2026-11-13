@@ -62,13 +62,42 @@ function getFfprobeBinary(): string {
   return "ffprobe";
 }
 
-export function getMediaBinaryStatus(): {
+export async function getMediaBinaryStatus(): Promise<{
   ffmpegAvailable: boolean;
   ffprobeAvailable: boolean;
-} {
+  ffmpegRunnable: boolean;
+  ffprobeRunnable: boolean;
+  ffmpegError?: string;
+  ffprobeError?: string;
+}> {
+  const ffmpegBin = getFfmpegBinary();
+  const ffprobeBin = getFfprobeBinary();
+
+  let ffmpegRunnable = false;
+  let ffmpegError: string | undefined;
+  try {
+    await execFileAsync(ffmpegBin, ["-version"], { timeout: 5000 });
+    ffmpegRunnable = true;
+  } catch (err) {
+    ffmpegError = err instanceof Error ? err.message : String(err);
+  }
+
+  let ffprobeRunnable = false;
+  let ffprobeError: string | undefined;
+  try {
+    await execFileAsync(ffprobeBin, ["-version"], { timeout: 5000 });
+    ffprobeRunnable = true;
+  } catch (err) {
+    ffprobeError = err instanceof Error ? err.message : String(err);
+  }
+
   return {
     ffmpegAvailable: Boolean(ffmpegPath && fs.existsSync(ffmpegPath)),
     ffprobeAvailable: Boolean(ffprobeStatic?.path && fs.existsSync(ffprobeStatic.path)),
+    ffmpegRunnable,
+    ffprobeRunnable,
+    ffmpegError,
+    ffprobeError,
   };
 }
 
@@ -95,6 +124,8 @@ export async function probeMedia(
 
     return JSON.parse(stdout) as FfprobeResult;
   } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("ffprobe error:", err);
     if (
       err instanceof Error &&
       "killed" in err &&
@@ -107,15 +138,15 @@ export async function probeMedia(
     }
     const errno = (err as NodeJS.ErrnoException)?.code;
     if (errno === "ENOENT" || errno === "EACCES") {
-      // eslint-disable-next-line no-console
-      console.error("ffprobe binary spawn error:", err);
       throw new MediaProcessingError(
         "Server media inspector is unavailable.",
         500,
       );
     }
+    const detail =
+      err instanceof Error && err.message ? ` (${err.message.slice(0, 120)})` : "";
     throw new MediaProcessingError(
-      "The selected file is not a valid or supported video.",
+      `The selected file is not a valid or supported video.${detail}`,
       400,
     );
   }
