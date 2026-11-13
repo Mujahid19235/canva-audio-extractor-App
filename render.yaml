@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: canva-audio-extractor-backend
+    runtime: docker
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: CANVA_APP_ID
+        sync: false
+      - key: CANVA_APP_ORIGIN
+        sync: false
+      - key: CANVA_BACKEND_PORT
+        value: "3001"
