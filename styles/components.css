@@ -37,7 +37,7 @@
   visibility: visible;
 }
 
-/* Source selector with centered vertical pipe separator and square corners */
+/* Source selector with square corners and branded selected state */
 .sourceSwitchWrap {
   position: relative;
 }
@@ -47,26 +47,9 @@
   border-radius: 0 !important;
 }
 
-.sourceSwitchWrap [role="radiogroup"] > div {
-  column-gap: 20px !important;
-}
-
-.sourceSwitchWrap [role="radiogroup"] > div > :first-child {
-  position: relative;
-}
-
-.sourceSwitchWrap [role="radiogroup"] > div > :first-child::after {
-  content: "|";
-  position: absolute;
-  top: 50%;
-  right: -10px;
-  transform: translate(50%, -50%);
-  color: rgba(17, 23, 29, 0.35);
-  font-size: 14px;
-  line-height: 1;
-  user-select: none;
-  pointer-events: none;
-  z-index: 2;
+.sourceSwitchWrap [role="radiogroup"] button[aria-checked="true"] {
+  background-color: #7d2ae8 !important;
+  color: #ffffff !important;
 }
 
 /* Horizontal OR divider above Choose From Device */
