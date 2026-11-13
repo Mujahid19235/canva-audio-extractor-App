@@ -276,13 +276,6 @@ export const App = () => {
                 onChange={handleSourceChange}
                 disabled={isProcessing}
               />
-              <span className={styles.sourceSwitchSeparator} aria-hidden="true">
-                {intl.formatMessage({
-                  defaultMessage: "|",
-                  description:
-                    "Subtle vertical pipe separator between video source options.",
-                })}
-              </span>
             </div>
           )}
         />

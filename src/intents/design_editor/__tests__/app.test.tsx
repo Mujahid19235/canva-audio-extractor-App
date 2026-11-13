@@ -240,10 +240,10 @@ describe("Audio Extractor App", () => {
       } as Response)
       .mockResolvedValueOnce({ ok: true } as Response);
 
-    const { container, getByRole, getByText, findByText, getAllByLabelText } =
+    const { container, getByRole, findByText, getAllByLabelText } =
       renderInTestProvider(<App />);
 
-    expect(getByText("|")).toBeTruthy();
+    expect(getByRole("radiogroup")).toBeTruthy();
 
     const selectedInCanvaTab = getByRole("radio", {
       name: "Selected in Canva",
