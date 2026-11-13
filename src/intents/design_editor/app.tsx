@@ -12,7 +12,7 @@ import {
   Title,
 } from "@canva/app-ui-kit";
 import { addAudioTrack } from "@canva/design";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useIntl } from "react-intl";
 import * as styles from "styles/components.css";
 import {
@@ -26,6 +26,21 @@ import {
 type VideoSource = "canvas" | "device";
 
 type ProcessingStage = "idle" | "extracting" | "uploading";
+
+const ACCEPTED_VIDEO_FORMATS = [
+  "video/*",
+  ".mp4",
+  ".mov",
+  ".m4v",
+  ".webm",
+  ".avi",
+  ".mkv",
+  ".flv",
+  ".wmv",
+  ".3gp",
+  ".ogv",
+  ".ts",
+];
 
 interface StatusMessage {
   tone: "positive" | "critical";
@@ -43,6 +58,7 @@ export const App = () => {
   const [stage, setStage] = useState<ProcessingStage>("idle");
   const [status, setStatus] = useState<StatusMessage | undefined>(undefined);
   const [showCanvasGuide, setShowCanvasGuide] = useState(false);
+  const hiddenFileInputContainerRef = useRef<HTMLDivElement | null>(null);
 
   const isProcessing = stage !== "idle";
   const hasValidSource =
@@ -103,6 +119,22 @@ export const App = () => {
     }
 
     setLocalFile(file);
+  };
+
+  const handleAcceptedFilesFromGuide = (files: File[]) => {
+    handleAcceptedFiles(files);
+    const file = files[0];
+    if (file && validateLocalVideoFile(file) === undefined) {
+      setSource("device");
+      setShowCanvasGuide(false);
+    }
+  };
+
+  const handleOpenDeviceFilePicker = () => {
+    const fileInput = hiddenFileInputContainerRef.current?.querySelector<HTMLInputElement>(
+      'input[type="file"]',
+    );
+    fileInput?.click();
   };
 
   const handleRejectedFiles = () => {
@@ -240,27 +272,57 @@ export const App = () => {
                 </Button>
                 {showCanvasGuide && (
                   <Rows spacing="1u">
-                    <Text size="small" tone="secondary">
-                      {intl.formatMessage({
-                        defaultMessage:
-                          "1. Open Uploads in Canva's left sidebar or click a video on your page. 2. Once selected on the canvas, click Extract below.",
-                        description:
-                          "Step-by-step instructions shown when the user clicks the video selection prompt.",
-                      })}
-                    </Text>
-                    <Button
-                      variant="tertiary"
-                      stretch
-                      onClick={() => handleSourceChange("device")}
+                    <Rows spacing="0.5u">
+                      <Text size="small" tone="secondary">
+                        {intl.formatMessage({
+                          defaultMessage:
+                            "1. Open Uploads in Canva's left sidebar or click a video on your page.",
+                          description:
+                            "First step shown when the user clicks the video selection prompt.",
+                        })}
+                      </Text>
+                      <Text size="small" tone="secondary">
+                        {intl.formatMessage({
+                          defaultMessage:
+                            "2. Once selected on the canvas, click Extract below.",
+                          description:
+                            "Second step shown on a new line when the user clicks the video selection prompt.",
+                        })}
+                      </Text>
+                    </Rows>
+                    <div
+                      style={{
+                        backgroundColor: "rgba(17, 23, 29, 0.05)",
+                        borderRadius: "8px",
+                      }}
                     >
-                      {intl.formatMessage({
-                        defaultMessage: "Or choose video from device",
-                        description:
-                          "Shortcut button to switch to local file upload.",
-                      })}
-                    </Button>
+                      <Button
+                        variant="tertiary"
+                        stretch
+                        onClick={handleOpenDeviceFilePicker}
+                      >
+                        {intl.formatMessage({
+                          defaultMessage: "Or choose video from device",
+                          description:
+                            "Shortcut button to open the device file picker directly.",
+                        })}
+                      </Button>
+                    </div>
                   </Rows>
                 )}
+                <div
+                  ref={hiddenFileInputContainerRef}
+                  style={{ display: "none" }}
+                  aria-hidden="true"
+                >
+                  <FileInput
+                    multiple={false}
+                    accept={ACCEPTED_VIDEO_FORMATS}
+                    disabled={isProcessing}
+                    onDropAcceptedFiles={handleAcceptedFilesFromGuide}
+                    onDropRejectedFiles={handleRejectedFiles}
+                  />
+                </div>
               </Rows>
             ) : videoSelection.count === 1 ? (
               <Text size="small">
@@ -289,20 +351,7 @@ export const App = () => {
             <FileInput
               stretchButton
               multiple={false}
-              accept={[
-                "video/*",
-                ".mp4",
-                ".mov",
-                ".m4v",
-                ".webm",
-                ".avi",
-                ".mkv",
-                ".flv",
-                ".wmv",
-                ".3gp",
-                ".ogv",
-                ".ts",
-              ]}
+              accept={ACCEPTED_VIDEO_FORMATS}
               disabled={isProcessing}
               onDropAcceptedFiles={handleAcceptedFiles}
               onDropRejectedFiles={handleRejectedFiles}
