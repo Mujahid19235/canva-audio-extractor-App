@@ -42,6 +42,7 @@ export const App = () => {
   const [localFile, setLocalFile] = useState<File | undefined>(undefined);
   const [stage, setStage] = useState<ProcessingStage>("idle");
   const [status, setStatus] = useState<StatusMessage | undefined>(undefined);
+  const [showCanvasGuide, setShowCanvasGuide] = useState(false);
 
   const isProcessing = stage !== "idle";
   const hasValidSource =
@@ -50,6 +51,7 @@ export const App = () => {
   const handleSourceChange = (nextSource: VideoSource) => {
     setSource(nextSource);
     setStatus(undefined);
+    setShowCanvasGuide(false);
   };
 
   const handleAcceptedFiles = (files: File[]) => {
@@ -224,14 +226,42 @@ export const App = () => {
         {source === "canvas" ? (
           <Box padding="1.5u" borderRadius="standard" background="neutralLow">
             {videoSelection.count === 0 ? (
-              <Text size="small" tone="secondary">
-                {intl.formatMessage({
-                  defaultMessage:
-                    "First select your video in editor and then it will extract.",
-                  description:
-                    "Helper text shown when no video is currently selected on the canvas.",
-                })}
-              </Text>
+              <Rows spacing="1u">
+                <Button
+                  variant="secondary"
+                  stretch
+                  onClick={() => setShowCanvasGuide((prev) => !prev)}
+                >
+                  {intl.formatMessage({
+                    defaultMessage: "Select a video in editor or Uploads",
+                    description:
+                      "Interactive button prompt shown when no video is selected on the Canva canvas.",
+                  })}
+                </Button>
+                {showCanvasGuide && (
+                  <Rows spacing="1u">
+                    <Text size="small" tone="secondary">
+                      {intl.formatMessage({
+                        defaultMessage:
+                          "1. Open Uploads in Canva's left sidebar or click a video on your page. 2. Once selected on the canvas, click Extract below.",
+                        description:
+                          "Step-by-step instructions shown when the user clicks the video selection prompt.",
+                      })}
+                    </Text>
+                    <Button
+                      variant="tertiary"
+                      stretch
+                      onClick={() => handleSourceChange("device")}
+                    >
+                      {intl.formatMessage({
+                        defaultMessage: "Or choose video from device",
+                        description:
+                          "Shortcut button to switch to local file upload.",
+                      })}
+                    </Button>
+                  </Rows>
+                )}
+              </Rows>
             ) : videoSelection.count === 1 ? (
               <Text size="small">
                 {intl.formatMessage({

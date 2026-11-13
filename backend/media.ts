@@ -3,12 +3,28 @@ import fs from "node:fs";
 import fsp from "node:fs/promises";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
-import { promisify } from "node:util";
 import ffmpegPath from "ffmpeg-static";
 import ffprobeStatic from "ffprobe-static";
 import { ValidationError, validateRemoteVideoUrl } from "./security";
 
-const execFileAsync = promisify(execFile);
+function execFileAsync(
+  file: string,
+  args: string[],
+  options: { timeout?: number; maxBuffer?: number } = {},
+): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    execFile(file, args, options, (error, stdout, stderr) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve({
+        stdout: typeof stdout === "string" ? stdout : String(stdout ?? ""),
+        stderr: typeof stderr === "string" ? stderr : String(stderr ?? ""),
+      });
+    });
+  });
+}
 
 export class MediaProcessingError extends Error {
   readonly statusCode: number;
