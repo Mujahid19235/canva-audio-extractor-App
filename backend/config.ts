@@ -37,7 +37,7 @@ export function loadBackendConfig(): BackendConfig {
   return {
     canvaAppId,
     canvaAppOrigin: process.env.CANVA_APP_ORIGIN?.trim() || undefined,
-    port: process.env.CANVA_BACKEND_PORT || 3001,
+    port: process.env.PORT || process.env.CANVA_BACKEND_PORT || 3001,
     publicBackendUrl:
       process.env.CANVA_PUBLIC_BACKEND_URL?.trim() ||
       process.env.CANVA_BACKEND_HOST?.trim() ||

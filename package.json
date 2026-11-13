@@ -45,7 +45,8 @@
     "multer": "^2.5.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-intl": "^7.1.11"
+    "react-intl": "^7.1.11",
+    "tsx": "4.23.15"
   },
   "devDependencies": {
     "@canva/app-eslint-plugin": "^1.1.0",
@@ -84,7 +85,6 @@
     "prettier": "3.9.10",
     "prompts": "2.4.2",
     "ts-jest": "29.4.15",
-    "tsx": "4.23.15",
     "typescript": "5.9.3",
     "webpack": "5.112.2",
     "webpack-dev-server": "5.2.7",
